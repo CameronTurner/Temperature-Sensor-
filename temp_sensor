@@ -1,0 +1,60 @@
+// This #include statement was automatically added by the Particle IDE.
+#include "OneWire/OneWire.h"
+
+// This #include statement was automatically added by the Particle IDE.
+#include "spark-dallas-temperature/spark-dallas-temperature.h"
+
+
+//New code for the Blynk feature
+#include "blynk/blynk.h"
+//DANGER - DO NOT SHARE!!!!
+char auth[] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"; // Put your blynk token here
+//To geta blynk token - open the app and create a new page. www.blynk.cc
+//DANGER - DO NOT SHARE!!!!
+
+
+
+
+double tempC = 0.0;
+double tempF = 0.0;
+//New variable added to check the Temp before assigning a new value to tempC
+double tempCheck = 0.0;
+
+int tempSensorPin = D2;
+
+OneWire oneWire(tempSensorPin);
+DallasTemperature sensors(&oneWire);
+
+void setup() {
+    sensors.begin();
+    Particle.variable("tempc", &tempC, DOUBLE);
+    Particle.variable("tempf", &tempF, DOUBLE);
+    //Added in a new tempCheck variable - not sure if this is needed, but followed for consistency
+    Particle.variable("tempCheck", &tempF, DOUBLE);
+    Blynk.begin(auth);
+}
+
+void loop() {
+  sensors.requestTemperatures();
+  //This next line assigns the current temp to the 'Check variable'
+  tempCheck = sensors.getTempCByIndex(0);
+  //This statement checks to see if the temp is less than -50 deg C - I selected -50C as the sensor for me isn't going to get that cold
+  //You can select a different minimum temp, I avoided setting it to -127 as I wasn't sure if there were rounding or decimal issues which I didn't bother checking for
+  if ( tempCheck < -50 )
+  {
+      //The below statement leaves tempC as is if the sensor reports < -50C
+      tempC = tempC;
+      
+  }
+  else
+  {
+    tempC = tempCheck;
+    tempF = tempC * 9.0 / 5.0 + 32.0;
+    // This command writes Arduino's uptime in seconds to Virtual Pin V1
+    Blynk.run(); // all the Blynk magic happens here
+    //Blynk.virtualWrite(2, tempC);
+    //delay(1500);
+  }
+}
+
+
